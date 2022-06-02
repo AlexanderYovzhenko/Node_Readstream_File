@@ -1,0 +1,23 @@
+{
+  "name": "node_readstream_file",
+  "version": "1.0.0",
+  "description": "readStream",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "start:dev": "nodemon src/app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GoldenManBel/Node_Readstream_File.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GoldenManBel/Node_Readstream_File/issues"
+  },
+  "homepage": "https://github.com/GoldenManBel/Node_Readstream_File#readme",
+  "devDependencies": {
+    "nodemon": "^2.0.16"
+  }
+}
