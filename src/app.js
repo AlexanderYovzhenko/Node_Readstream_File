@@ -33,7 +33,7 @@ async function readLinesFile(fileName, numberLines) {
         const resBufLines = buf.slice(0).toString().split('\r');
         const resLines = resBufLines.slice(-numberLines).join(' ');      
         console.log(resLines);
-        console.log('\nКоличество линий ' + resBufLines.slice(-numberLines).length);
+        console.log('\nКоличество строк ' + resBufLines.slice(-numberLines).length);
         const end = Date.now();
         console.log((end - start) / 1000, 's');
       }
@@ -48,6 +48,6 @@ async function readLinesFile(fileName, numberLines) {
 }
 
 const fileNameArr = ['textEn.txt', 'textRu.txt', 'textSmall.txt'];
-const numberLines = 50;
+const numberLines = 5;
 
 readLinesFile(fileNameArr[0], numberLines);
