@@ -1,29 +1,53 @@
 const fs = require('fs');
-const readline = require('readline');
+
+// Примерное число байт в строке
+const numberLetterLines = 1000;
 
 async function readLinesFile(fileName, numberLines) {
-  const fileReadStream = fs.createReadStream(__dirname + '/../files/' + fileName);
-  const linesFile = [];
-
-  const readLine = readline.createInterface({
-    input: fileReadStream,
-    crlfDelay: Infinity
+  const start = Date.now();
+  let sizeFile = 0;
+  const bufferSize = numberLines * numberLetterLines;
+  
+  fs.stat(('files/' + fileName), (error, stats) => {
+      if (error) {
+        console.error(error);
+      }
+      else {
+        sizeFile = stats.size;
+      }
   });
 
-  for await (const line of readLine) {
-    linesFile.push(line);
-  }
+  fs.open('files/' + fileName, 'r', function (err, fd) {
+    if (err) {
+      console.error(err);
+    }
+    
+    const buf = new Buffer.allocUnsafe(sizeFile > bufferSize ? bufferSize : sizeFile); 
 
-  if (numberLines > linesFile.length) {
-    console.log(`All lines from the file:\n ${linesFile.join('\n')}`);
-  } else if (numberLines <= 0 || !!numberLines === false) {
-    console.log('Not correct number of lines');
-  } else {
-    console.log(`Last ${numberLines} line[s] from the file:\n ${linesFile.slice((linesFile.length - numberLines)).join('\n')}`);
-  }
+    fs.read(fd, buf, 0, buf.length, sizeFile > bufferSize ? sizeFile - bufferSize : 0, function (err, bytes) {  
+      if (err) {
+        console.error(err);
+      }
+      
+      if (bytes > 0) {
+        const resBufLines = buf.slice(0).toString().split('\r');
+        const resLines = resBufLines.slice(-numberLines).join(' ');      
+        console.log(resLines);
+        console.log('\nКоличество линий ' + resBufLines.slice(-numberLines).length);
+        const end = Date.now();
+        console.log((end - start) / 1000, 's');
+      }
+
+      fs.close(fd, function (err) {
+        if (err) {
+          console.error(err);
+        }
+      });
+    });
+  });
 }
 
-const fileNameArr = ['textEn.txt', 'textRu.txt'];
-const numberLines = 5;
+const fileNameArr = ['textEn.txt', 'textRu.txt', 'textSmall.txt'];
+const numberLines = 50;
 
-readLinesFile(fileNameArr[1], numberLines);
+readLinesFile(fileNameArr[0], numberLines);
