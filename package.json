@@ -19,5 +19,8 @@
   "homepage": "https://github.com/GoldenManBel/Node_Readstream_File#readme",
   "devDependencies": {
     "nodemon": "^2.0.16"
+  },
+  "dependencies": {
+    "mz": "^2.7.0"
   }
 }
