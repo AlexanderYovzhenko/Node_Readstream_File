@@ -1,88 +1,72 @@
-const fs = require("mz/fs");
+const fs = require('mz/fs');
 
-async function readLastLines (input_file_path, maxLineCount, encoding) {
+const readLastLines = async (inputFilePath, maxLineCount) => {
 
-  const NEW_LINE_CHARACTERS = ["\n"];
+  const NEW_LINE_CHARACTERS = ['\n'];
+  const encoding = 'utf8';
+  let stat = null;
+  let file = null;
+  let chars = 0;
+  let lineCount = 0;
+  let lines = '';
 
-  if (encoding == null) {
-    encoding = "utf8";
-  }
-
-  const readPreviousChar = function( stat, file, currentCharacterCount) {
-    return fs.read(file, Buffer.alloc(1), 0, 1, stat.size - 1 - currentCharacterCount)
-      .then((bytesReadAndBuffer) => {
-        return String.fromCharCode(bytesReadAndBuffer[1][0]);
-      });
+  const existsFile = () => {
+    return fs.exists(inputFilePath);
   };
 
-  return new Promise((resolve, reject) => {
-    let self = {
-      stat: null,
-      file: null,
-    };
+  const readPreviousChar = async ( stat, file, currentCharacterCount) => {
+    const bytesReadAndBuffer = await fs.read(file, Buffer.alloc(1), 0, 1, stat.size - 1 - currentCharacterCount);
 
-    fs.exists(input_file_path)
-      .then((exists) => {
-        if (!exists) {
-          throw new Error("file does not exist");
-        }
+    return String.fromCharCode(bytesReadAndBuffer[1][0]);
+  };
 
-      }).then(() => {
-        let promises = [];
+  const countLines = async () => {
+    if (lines.length >= stat.size || lineCount >= maxLineCount) {
 
-        promises.push(
-          fs.stat(input_file_path)
-            .then(stat => self.stat = stat));
+      if (NEW_LINE_CHARACTERS.includes(lines.substring(0, 1))) {
+        lines = lines.substring(1);
+      }
+      fs.close(file);
+      return Buffer.from(lines, 'binary').toString(encoding);
+    }
 
-        promises.push(
-          fs.open(input_file_path, "r")
-            .then(file => self.file = file));
+    const nextCharacter = await readPreviousChar(stat, file, chars);
 
-        return Promise.all(promises);
-      }).then(() => {
-        let chars = 0;
-        let lineCount = 0;
-        let lines = "";
+    lines = nextCharacter + lines;
 
-        const do_while_loop = function() {
-          if (lines.length > self.stat.size) {
-            lines = lines.substring(lines.length - self.stat.size);
-          }
+    if (NEW_LINE_CHARACTERS.includes(nextCharacter) && lines.length > 1) {
+      lineCount++;
+    }
 
-          if (lines.length >= self.stat.size || lineCount >= maxLineCount) {
-            if (NEW_LINE_CHARACTERS.includes(lines.substring(0, 1))) {
-              lines = lines.substring(1);
-            }
-            fs.close(self.file);
-            if (encoding === "buffer") {
-              return resolve(Buffer.from(lines, "binary"));
-            }
-            return resolve(Buffer.from(lines, "binary").toString(encoding));
-          }
+    chars++;
 
-          return readPreviousChar(self.stat, self.file, chars)
-            .then((nextCharacter) => {
-              lines = nextCharacter + lines;
-              if (NEW_LINE_CHARACTERS.includes(nextCharacter) && lines.length > 1) {
-                lineCount++;
-              }
-              chars++;
-            })
-            .then(do_while_loop);
-        };
-        return do_while_loop();
+    return countLines();
+  };
 
-      }).catch((reason) => {
-        if (self.file !== null) {
-          fs.close(self.file).catch(() => {
-          });
-        }
-        return reject(reason);
-      });
+  return new Promise(async (resolve, reject) => {
+    try {
+      if (!await existsFile()) {
+        return reject('file does not exist');
+      }
+
+      stat =  await fs.stat(inputFilePath);
+      file =  await fs.open(inputFilePath, 'r');
+
+      return resolve(countLines());
+      
+    } catch (error) {
+      if (file !== null) {
+        await fs.close(file);
+      }
+
+      return reject(error);
+    }
   });
 }
 
-const fileNameArr = ['textEn.txt', 'textRu.txt', 'textSmall.txt'];
+const fileNamesArr = ['textEn.txt', 'textRu.txt', 'textSmall.txt'];
 const numberLines = 5;
 
-readLastLines(__dirname + '/../files/' + fileNameArr[0], numberLines).then((lines) => console.log(lines));
+readLastLines(__dirname + '/../files/' + fileNamesArr[0], numberLines)
+  .then((lines) => console.log(lines))
+  .catch((err) => console.log(err));
