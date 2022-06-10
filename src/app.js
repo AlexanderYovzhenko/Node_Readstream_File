@@ -2,10 +2,16 @@ const fs = require('mz/fs');
 
 const readLastLines = async (inputFilePath, maxLineCount) => {
 
+  const existsFile = await fs.exists(inputFilePath);
+      
+  if (!existsFile) {
+    return 'file does not exist';
+  };
+
   const NEW_LINE_CHARACTERS = ['\n'];
   const encoding = 'utf8';
-  let stat = null;
-  let file = null;
+  const stat = await fs.stat(inputFilePath);
+  const file = await fs.open(inputFilePath, 'r');
   let chars = 0;
   let lineCount = 0;
   let lines = '';
@@ -37,27 +43,7 @@ const readLastLines = async (inputFilePath, maxLineCount) => {
     }
   };
 
-  return new Promise(async (resolve, reject) => {
-    try {
-      const existsFile = await fs.exists(inputFilePath);
-      
-      if (!existsFile) {
-        return reject('file does not exist');
-      }
-
-      stat =  await fs.stat(inputFilePath);
-      file =  await fs.open(inputFilePath, 'r');
-
-      return resolve(countLines());
-      
-    } catch (error) {
-      if (file !== null) {
-        await fs.close(file);
-      }
-
-      return reject(error);
-    }
-  });
+  return countLines();
 }
 
 const fileNamesArr = ['textEn.txt', 'textRu.txt', 'textSmall.txt'];
