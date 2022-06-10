@@ -10,10 +10,6 @@ const readLastLines = async (inputFilePath, maxLineCount) => {
   let lineCount = 0;
   let lines = '';
 
-  const existsFile = () => {
-    return fs.exists(inputFilePath);
-  };
-
   const readPreviousChar = async ( stat, file, currentCharacterCount) => {
     const bytesReadAndBuffer = await fs.read(file, Buffer.alloc(1), 0, 1, stat.size - 1 - currentCharacterCount);
 
@@ -21,31 +17,31 @@ const readLastLines = async (inputFilePath, maxLineCount) => {
   };
 
   const countLines = async () => {
-    if (lines.length >= stat.size || lineCount >= maxLineCount) {
+    for (let index = 0; index <= stat.size; index++) {
+      if (lines.length >= stat.size || lineCount >= maxLineCount) {
 
-      if (NEW_LINE_CHARACTERS.includes(lines.substring(0, 1))) {
-        lines = lines.substring(1);
+        if (NEW_LINE_CHARACTERS.includes(lines.substring(0, 1))) {
+          lines = lines.substring(1);
+        }
+        fs.close(file);
+        return Buffer.from(lines, 'binary').toString(encoding);
       }
-      fs.close(file);
-      return Buffer.from(lines, 'binary').toString(encoding);
+  
+      const nextCharacter = await readPreviousChar(stat, file, chars);
+      lines = nextCharacter + lines;
+  
+      if (NEW_LINE_CHARACTERS.includes(nextCharacter) && lines.length > 1) {
+        lineCount++;
+      }
+      chars++;
     }
-
-    const nextCharacter = await readPreviousChar(stat, file, chars);
-
-    lines = nextCharacter + lines;
-
-    if (NEW_LINE_CHARACTERS.includes(nextCharacter) && lines.length > 1) {
-      lineCount++;
-    }
-
-    chars++;
-
-    return countLines();
   };
 
   return new Promise(async (resolve, reject) => {
     try {
-      if (!await existsFile()) {
+      const existsFile = await fs.exists(inputFilePath);
+      
+      if (!existsFile) {
         return reject('file does not exist');
       }
 
@@ -69,4 +65,4 @@ const numberLines = 5;
 
 readLastLines(__dirname + '/../files/' + fileNamesArr[0], numberLines)
   .then((lines) => console.log(lines))
-  .catch((err) => console.log(err));
+  .catch((err) => console.error(err));
